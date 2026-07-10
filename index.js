@@ -42,6 +42,7 @@ app.get("/", async function (req, res) {
 // display the clients shipping information page
 app.get('/clients', async function (req, res) {
     const sql = `SELECT 
+            Clients.client_id AS "Client ID",
             Clients.company_name AS "Client Company Name",
             Clients.first_name AS "Client First Name",
             Clients.last_name AS "Client Last Name",
@@ -65,7 +66,7 @@ app.get('/clients', async function (req, res) {
     });
 });
 
-// add client shipping information
+// add client shipping information - display the form to add client shipping information
 app.get('/clients/create', async function (req, res) {
     const [clients] = await connection.query("SELECT * FROM Clients");
     const [categories] = await connection.query("SELECT * FROM Industry_Categories");
@@ -76,6 +77,7 @@ app.get('/clients/create', async function (req, res) {
     });
 });``
 
+// add client shipping information - handle the form submission to add client shipping information
 app.post('/clients/create', async function (req, res) {
     console.log(req.body);
 
@@ -95,6 +97,30 @@ app.post('/clients/create', async function (req, res) {
     res.redirect('/clients');
 
 });
+
+// delete client shipping information - display the form to delete client shipping information
+app.get('/clients/:client_id/delete', async function (req, res) {
+    const [clients] = await connection.execute(
+        "SELECT * FROM Clients WHERE client_id = ?", [req.params.client_id]);
+
+        const client = clients[0];
+    res.render('clients/delete', {
+        client
+    });
+});
+
+// delete client shipping information - handle the form submission to delete client shipping information
+app.post('/clients/:client_id/delete', async function (req, res){
+    const sql = "DELETE FROM Clients WHERE client_id = ?";
+    await connection.execute(sql, [req.params.client_id]);
+    res.redirect('/clients');
+});
+
+// update client shipping information - display the form to update client shipping information
+app.get('/clients/:client_id/update', async function (req, res) {
+
+});
+
 
 app.listen(3000, function () {
     console.log("Server Started");
