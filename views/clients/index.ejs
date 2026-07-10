@@ -1,0 +1,58 @@
+<%- contentFor('title') %>
+    Shipping Information
+
+    <%- contentFor('body') %>
+        <h1>Clients Shipping Information</h1>
+        <div>
+            <a class="btn btn-success" href="/clients/create">Add New Client</a>
+        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Client Company Name</th>
+                    <th>Client First Name</th>
+                    <th>Client Last Name</th>
+                    <th>Client Contact Email</th>
+                    <th>Client Joint Date</th>
+                    <th>Industry Categories</th>
+                    <th>Employee Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% for (let c of clients) { %>
+                    <tr>
+                        <td>
+                            <%= c[`Client Company Name`] %>
+                        </td>
+                        <td>
+                            <%= c[`Client First Name`] %>
+                        </td>
+                        <td>
+                            <%= c[`Client Last Name`] %>
+                        </td>
+                        <td>
+                            <%= c[`Client Contact Email`] %>
+                        </td>
+                        <td>
+                            <%= c[`Client Joint Date`] ? c[`Client Joint Date`].toISOString().split('T')[0] : 'N/A' %>
+                        </td>
+                        <td class="text-nowrap">
+                            <%= c[`Industry Categories`] %>
+                        </td>
+                        <td>
+                            <%= c[`Employee First Name`] %>
+                                <%= c[`Employee Last Name`] %>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a class="btn btn-primary btn-sm" href="#">
+                                    Update </a>
+
+                                <a class="btn btn-danger btn-sm" href="#">
+                                    Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <% } %>
+            </tbody>
+        </table>

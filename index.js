@@ -1,0 +1,101 @@
+const express = require('express');
+// ejs is a template library
+// it allows us to store html in a file a file and then send back as response
+const ejs = require('ejs');
+const expressLayouts = require('express-ejs-layouts');
+const app = express();
+
+require("dotenv").config();
+const { createPool } = require('mysql2/promise');
+
+app.set("view engine", "ejs");
+
+app.use(expressLayouts);
+app.set('layout', 'layouts/base');
+
+app.use(express.urlencoded({
+    extended: true
+}));
+
+// create a connection pool to the database
+const connection = createPool(
+    {
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        database: process.env.DB_NAME,
+        password: process.env.DB_PASSWORD,
+        port: process.env.DB_PORT
+    }
+);
+
+// display the home page
+app.get("/", async function (req, res) {
+    const todayDate = new Date().toLocaleDateString("en-GB");
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const dayOfWeek = days[new Date().getDay()];
+    // res.send("<h1>Welcome to Logistic Company</h1>");
+    res.render("home", {
+        todayDate, dayOfWeek
+    });
+});
+
+// display the clients shipping information page
+app.get('/clients', async function (req, res) {
+    const sql = `SELECT 
+            Clients.company_name AS "Client Company Name",
+            Clients.first_name AS "Client First Name",
+            Clients.last_name AS "Client Last Name",
+            Clients.contact_email AS "Client Contact Email", 
+            Clients.joint_date AS "Client Joint Date", 
+            Industry_Categories.name AS "Industry Categories", 
+            Employees.first_name AS "Employee First Name", 
+            Employees.last_name AS "Employee Last Name" 
+                FROM Clients 
+                JOIN Industry_Categories ON Clients.category_id = Industry_Categories.category_id 
+                LEFT JOIN Employees ON Clients.employee_id = Employees.employee_id
+                ORDER BY Clients.company_name;
+    `
+    const response = await connection.query({
+        "sql": sql,
+        "nestedTables": true
+    });
+    console.log(response[0]);
+    res.render('clients/index', {
+        clients: response[0]
+    });
+});
+
+// add client shipping information
+app.get('/clients/create', async function (req, res) {
+    const [clients] = await connection.query("SELECT * FROM Clients");
+    const [categories] = await connection.query("SELECT * FROM Industry_Categories");
+    const [employees] = await connection.query("SELECT * FROM Employees");
+    const [departments] = await connection.query("SELECT * FROM Departments");
+    res.render('clients/create', {
+        clients, categories, employees, departments
+    });
+});``
+
+app.post('/clients/create', async function (req, res) {
+    console.log(req.body);
+
+    const sql = `INSERT INTO Clients (category_id, company_name, contact_email, first_name, last_name, joint_date, employee_id) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+    await connection.query(sql, [
+        req.body.category_id,
+        req.body.company_name,
+        req.body.contact_email,
+        req.body.first_name,
+        req.body.last_name,
+        req.body.joint_date,
+        req.body.employee_id
+    ]);
+
+    res.redirect('/clients');
+
+});
+
+app.listen(3000, function () {
+    console.log("Server Started");
+})

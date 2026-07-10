@@ -1,0 +1,49 @@
+<%- contentFor("title") %>
+    Create Customer
+
+    <%- contentFor("body") %>
+        <form method="POST">
+            <H1>Client Information</H1>
+            <div>
+                <label>Client Company Name</label>
+                <input type="text" class="form-control" name="company_name" />
+            </div>
+            <div>
+                <label>Client First Name</label>
+                <input type="text" class="form-control" name="first_name" />
+            </div>
+            <div>
+                <label>Client Last Name</label>
+                <input type="text" class="form-control" name="last_name" />
+            </div>
+            <div>
+                <label>Client Contact Email</label>
+                <input type="text" class="form-control" name="contact_email" />
+            </div>
+            <div>
+                <label>Client Joint Date</label>
+                <input type="date" class="form-control" name="joint_date" />
+            </div>
+            <div>
+                <label>Industry Category</label>
+                <select class="form-control" name="category_id">
+                    <% for (let c of categories) { %>
+                        <option value="<%=c.category_id%>">
+                            <%= c.name %>
+                        </option>
+                        <% } %>
+                </select>
+            </div>
+            <div>
+                <label>Employee</label>
+                <select class="form-control" name="employee_id">
+                    <% for (let e of employees) { %>
+                        <option value="<%=e.employee_id%>">
+                            <%=e.first_name%>
+                                <%=e.last_name%>
+                        </option>
+                        <% } %>
+                </select>
+            </div>
+            <button class="btn btn-primary mt-3">Submit</button>
+        </form>
