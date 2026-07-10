@@ -1,0 +1,50 @@
+<%- contentFor("title") %>
+    Update Client
+
+    <%- contentFor("body") %>
+        <form method="POST">
+            <H1>Update Client Information</H1>
+            <div>
+                <label>Client Company Name</label>
+                <input type="text" class="form-control" name="company_name" value="<%= client.company_name %>" />
+            </div>
+            <div>
+                <label>Client First Name</label>
+                <input type="text" class="form-control" name="first_name" value="<%= client.first_name %>" />
+            </div>
+            <div>
+                <label>Client Last Name</label>
+                <input type="text" class="form-control" name="last_name" value="<%= client.last_name %>" />
+            </div>
+            <div>
+                <label>Client Contact Email</label>
+                <input type="text" class="form-control" name="contact_email" value="<%= client.contact_email %>" />
+            </div>
+            <div>
+                <label>Client Joint Date</label>
+                <input type="date" class="form-control" name="joint_date"
+                    value="<%= client.joint_date ? client.joint_date.toISOString().split('T')[0] : '' %>" />
+            </div>
+            <div>
+                <label>Industry Category</label>
+                <select class="form-control" name="category_id">
+                    <% for (let c of categories) { %>
+                        <option value="<%=c.category_id%>" <%=(c.category_id===client.category_id) ? 'selected' : '' %>>
+                            <%= c.name %>
+                        </option>
+                        <% } %>
+                </select>
+            </div>
+            <div>
+                <label>Employee</label>
+                <select class="form-control" name="employee_id">
+                    <% for (let e of employees) { %>
+                        <option value="<%=e.employee_id%>" <%=(e.employee_id===client.employee_id) ? 'selected' : '' %>>
+                            <%=e.first_name%>
+                                <%=e.last_name%>
+                        </option>
+                        <% } %>
+                </select>
+            </div>
+            <button class="btn btn-primary mt-3">Submit</button>
+        </form>

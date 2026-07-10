@@ -75,7 +75,7 @@ app.get('/clients/create', async function (req, res) {
     res.render('clients/create', {
         clients, categories, employees, departments
     });
-});``
+}); ``
 
 // add client shipping information - handle the form submission to add client shipping information
 app.post('/clients/create', async function (req, res) {
@@ -103,14 +103,14 @@ app.get('/clients/:client_id/delete', async function (req, res) {
     const [clients] = await connection.execute(
         "SELECT * FROM Clients WHERE client_id = ?", [req.params.client_id]);
 
-        const client = clients[0];
+    const client = clients[0];
     res.render('clients/delete', {
         client
     });
 });
 
 // delete client shipping information - handle the form submission to delete client shipping information
-app.post('/clients/:client_id/delete', async function (req, res){
+app.post('/clients/:client_id/delete', async function (req, res) {
     const sql = "DELETE FROM Clients WHERE client_id = ?";
     await connection.execute(sql, [req.params.client_id]);
     res.redirect('/clients');
@@ -118,9 +118,42 @@ app.post('/clients/:client_id/delete', async function (req, res){
 
 // update client shipping information - display the form to update client shipping information
 app.get('/clients/:client_id/update', async function (req, res) {
+    const [clients] = await connection.execute(
+        "SELECT * FROM Clients WHERE client_id = ?", [req.params.client_id]);
 
+    const client = clients[0];
+    const [categories] = await connection.query("SELECT * FROM Industry_Categories");
+    const [employees] = await connection.query("SELECT * FROM Employees");
+    res.render('clients/update', {
+        client, categories, employees
+    });
 });
 
+// update client shipping information - handle the form submission to update client shipping information
+app.post('/clients/:client_id/update', async function (req, res) {
+    const { category_id, company_name, contact_email, first_name, last_name, joint_date, employee_id} = req.body;
+    const sql = `Update Clients SET
+        category_id = ?,
+        company_name = ?,
+        contact_email = ?,
+        first_name = ?,
+        last_name = ?,
+        joint_date = ?,
+        employee_id = ?
+        WHERE client_id = ?`;
+        
+    await connection.execute(sql, [
+        category_id,
+        company_name,
+        contact_email,
+        first_name,
+        last_name,
+        joint_date,
+        employee_id,
+        req.params.client_id
+    ]);
+    res.redirect('/clients');
+});
 
 app.listen(3000, function () {
     console.log("Server Started");
