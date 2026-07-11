@@ -1,8 +1,8 @@
 <%- contentFor('title') %>
-    Shipping Information
+    Client Information
 
     <%- contentFor('body') %>
-        <h1>Clients Shipping Information</h1>
+        <h1>Clients Information</h1>
         <div>
             <a class="btn btn-success" href="/clients/create">Add New Client</a>
         </div>
@@ -48,7 +48,7 @@
                                 <a class="btn btn-primary btn-sm" href="/clients/<%= c[`Client ID`] %>/update">
                                     Update </a>
 
-                                <a class="btn btn-danger btn-sm" href="/clients/<%= c[`Client ID`] %>/delete">
+                                <a class="btn btn-danger btn-sm" href="/clients/<%= c['Client ID'] %>/delete">
                                     Delete</a>
                             </div>
                         </td>

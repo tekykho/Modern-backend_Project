@@ -1,10 +1,9 @@
-<%- contentFor("title") %>
-    Client Information
+<%- contentFor('title') %>
+    Shipment Information
 
-    <%- contentFor("body") %>
-        <form method="POST">
-            <H1>ADD Client Information</H1>
-            <div>
+    <%- contentFor('body') %>
+        <h1>Add Shipment Information</h1>
+        <!-- <div>
                 <label class="mt-2 fw-bold">Client Company Name</label>
                 <input type="text" class="form-control" name="company_name" />
             </div>
@@ -44,9 +43,28 @@
                         </option>
                         <% } %>
                 </select>
+            </div> -->
+        <!-- <div>
+                <label class="mt-2 fw-bold">Shipping Routes: Origin Hub</label>
+                <select class="form-control" name="shippingRoutes" multiple>
+                    <% for (let sr of shippingRoutes) { %>
+                        <option value="<%= sr.route_id%>">
+                            <%= sr.origin_hub%>
+                        </option>
+                        <% } %>
+                </select>
             </div>
             <div>
-                <button class="btn btn-primary mt-3">Submit</button>
-                <button class="btn btn-success mt-3">Cancel</button>
-            </div>
-        </form>
+                <label class="mt-2 fw-bold">Shipping Routes: Destination Hub</label>
+                <select class="form-control" name="shippingRoutes">
+                    <% for (let sr of shippingRoutes) { %>
+                        <option value="<%= sr.route_id%>">
+                            <%= sr.destination_hub%>
+                        </option>
+                        <% } %>
+                </select>
+            </div> -->
+        <div>
+            <button class="btn btn-primary mt-3">Submit</button>
+            <button class="btn btn-success mt-3">Cancel</button>
+        </div>

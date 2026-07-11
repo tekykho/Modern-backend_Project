@@ -1,10 +1,11 @@
 <%- contentFor("title") %>
-    Delete Client
+    Client Information
 
     <%- contentFor("body") %>
         <form method="POST" class="mt-3">
+            <H1>Delete Client Information</H1>
             <div class="alert alert-danger">
-                Are you sure want to delete <%=client.first_name%>
+                Are you sure want to delete  <%=client.first_name%>
                     <%=client.last_name%> ?
                         <div>
                             <a href="/clients" class="btn btn-success">Cancel</a>

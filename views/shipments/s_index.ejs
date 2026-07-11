@@ -1,0 +1,54 @@
+<%- contentFor('title') %>
+    Shipment Information
+
+    <%- contentFor('body') %>
+        <h1>Shipment Information</h1>
+        <div>
+            <a class="btn btn-success" href="/shipments/s_create">Add New Shipment</a>
+        </div>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Company Name</th>
+                    <th>Client First Name</th>
+                    <th>Client Last Name</th>
+                    <th>Contact Email</th>
+                    <th>Origin Hub</th>
+                    <th>Destination Hub</th>
+                    <th>Shipping Date</th>
+                    <th>Shipment Day</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% for (let c of clients) { %>
+                    <tr>
+                        <td>
+                            <%= c[`Company Name`] %>
+                        </td>
+                        <td>
+                            <%= c[`Client First Name`] %>
+                        </td>
+                        <td>
+                            <%= c[`Client Last Name`] %>
+                        </td>
+                        <td>
+                            <%= c[`Contact Email`] %>
+                        </td>
+                        <td>
+                            <%= c[`Origin Hub`] %>
+                        </td>
+                        <td>
+                            <%= c[`Destination Hub`] %>
+                        </td>
+                        <td>
+                            <%= c[`Shipping Date`] ? c[`Shipping Date`].toISOString().split('T')[0] : 'N/A' %>
+                        </td>
+                        <td>
+                            <%= c[`Shipment Day`] %>
+                        </td>
+                    </tr>
+                    <% } %>
+            </tbody>
+
+
+        </table>

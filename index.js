@@ -72,19 +72,20 @@ app.get('/clients/create', async function (req, res) {
     const [categories] = await connection.query("SELECT * FROM Industry_Categories");
     const [employees] = await connection.query("SELECT * FROM Employees");
     const [departments] = await connection.query("SELECT * FROM Departments");
+    const [shippingRoutes] = await connection.query("SELECT * FROM Shipping_Routes");
     res.render('clients/create', {
-        clients, categories, employees, departments
+        clients, categories, employees, departments, shippingRoutes
     });
-}); ``
+});
 
 // add client shipping information - handle the form submission to add client shipping information
 app.post('/clients/create', async function (req, res) {
     console.log(req.body);
 
     const sql = `INSERT INTO Clients (category_id, company_name, contact_email, first_name, last_name, joint_date, employee_id) 
-    VALUES (?, ?, ?, ?, ?, ?, ?)`;
+                    VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-    await connection.query(sql, [
+    const [result] = await connection.query(sql, [
         req.body.category_id,
         req.body.company_name,
         req.body.contact_email,
@@ -131,7 +132,7 @@ app.get('/clients/:client_id/update', async function (req, res) {
 
 // update client shipping information - handle the form submission to update client shipping information
 app.post('/clients/:client_id/update', async function (req, res) {
-    const { category_id, company_name, contact_email, first_name, last_name, joint_date, employee_id} = req.body;
+    const { category_id, company_name, contact_email, first_name, last_name, joint_date, employee_id } = req.body;
     const sql = `Update Clients SET
         category_id = ?,
         company_name = ?,
@@ -141,7 +142,7 @@ app.post('/clients/:client_id/update', async function (req, res) {
         joint_date = ?,
         employee_id = ?
         WHERE client_id = ?`;
-        
+
     await connection.execute(sql, [
         category_id,
         company_name,
@@ -153,6 +154,88 @@ app.post('/clients/:client_id/update', async function (req, res) {
         req.params.client_id
     ]);
     res.redirect('/clients');
+});
+
+// create shipment page; later used router 
+app.get('/shipments', async function (req, res) {
+    const sql = `SELECT 
+            Clients.client_id AS "Client ID", 
+            Clients.company_name AS "Company Name", 
+            Clients.first_name AS "Client First Name",
+            Clients.last_name AS "Client Last Name",
+            Clients.contact_email AS "Contact Email", 
+            Shipping_Routes.origin_hub AS "Origin Hub", 
+            Shipping_Routes.destination_hub AS "Destination Hub", 
+            Shipping_Routes.shipping_date AS "Shipping Date", 
+            Shipping_Routes.shipment_day AS "Shipment Day", 
+            Employees.first_name AS "Employee First Name", 
+            Employees.last_name AS "Employee Last Name" 
+                FROM Clients  
+                JOIN Industry_Categories ON Clients.category_id = Industry_Categories.category_id 
+                JOIN Client_Route ON Clients.client_id = Client_Route.client_id 
+                JOIN Shipping_Routes ON Client_Route.route_id = Shipping_Routes.route_id 
+                LEFT JOIN Employees ON Clients.employee_id = Employees.employee_id 
+                ORDER BY Clients.company_name, Shipping_Routes.shipping_date;
+    `
+    const response = await connection.query({
+        "sql": sql,
+        "nestedTables": true
+    });
+    console.log(response[0]);
+    res.render('shipments/s_index', {
+        clients: response[0]
+    });
+})
+
+app.get('/shipments/s_create', async function (req, res) {
+    const [clients] = await connection.query("SELECT * FROM Clients");
+    const [categories] = await connection.query("SELECT * FROM Industry_Categories");
+    const [employees] = await connection.query("SELECT * FROM Employees");
+    const [departments] = await connection.query("SELECT * FROM Departments");
+    const [shippingRoutes] = await connection.query("SELECT * FROM Shipping_Routes");
+    res.render('shipments/s_create', {
+        clients, categories, employees, departments, shippingRoutes
+    });
+});
+
+app.post('/shipments/s_create', async function (req, res) {
+    console.log(req.body);
+
+    const conn = await connection.getConnection();
+
+    try {
+        await conn.beginTransaction();
+        const sql = `INSERT INTO Clients (category_id, company_name, contact_email, first_name, last_name, joint_date, employee_id) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
+        const [result] = await connection.query(sql, [
+            req.body.category_id,
+            req.body.company_name,
+            req.body.contact_email,
+            req.body.first_name,
+            req.body.last_name,
+            req.body.joint_date,
+            req.body.employee_id
+        ]);
+
+        const newClientId = result.insertId;
+
+        if (Array.isArray(req.body.shippingRoutes)) {
+            for (let sr of req.body.shippingRoutes) {
+                const sql = `INSERT INTO Client_Route (client_id, route_id) VALUES (?, ?)`;
+                await connection.execute(sql, [newClientId, sr]);
+            }
+        }
+
+        await conn.commit();
+    } catch (err) {
+        await conn.rollback();
+    } finally {
+        await conn.release();
+    }
+
+    res.redirect('/shipments');
+
 });
 
 app.listen(3000, function () {
