@@ -156,7 +156,7 @@ app.post('/clients/:client_id/update', async function (req, res) {
     res.redirect('/clients');
 });
 
-// create shipment page; later used router 
+// shipment information
 app.get('/shipments', async function (req, res) {
     const sql = `SELECT 
             Clients.client_id AS "Client ID", 
@@ -199,43 +199,44 @@ app.get('/shipments/s_create', async function (req, res) {
 });
 
 app.post('/shipments/s_create', async function (req, res) {
-    console.log(req.body);
+     console.log(req.body);
 
     const conn = await connection.getConnection();
 
     try {
         await conn.beginTransaction();
-        const sql = `INSERT INTO Clients (category_id, company_name, contact_email, first_name, last_name, joint_date, employee_id) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-        const [result] = await connection.query(sql, [
-            req.body.category_id,
-            req.body.company_name,
-            req.body.contact_email,
-            req.body.first_name,
-            req.body.last_name,
-            req.body.joint_date,
-            req.body.employee_id
+        const sqlRoute = `INSERT INTO Shipping_Routes (origin_hub, destination_hub, shipping_date, shipment_day)
+                    VALUES (?, ?, ?, ?)`;
+
+        const [result] = await connection.execute(sqlRoute, [
+            req.body.origin_hub,
+            req.body.destination_hub,
+            req.body.shipping_date,
+            req.body.shipment_day
         ]);
 
-        const newClientId = result.insertId;
+        // console("Origin hub: ",req.body.origin_hub);
 
-        if (Array.isArray(req.body.shippingRoutes)) {
-            for (let sr of req.body.shippingRoutes) {
-                const sql = `INSERT INTO Client_Route (client_id, route_id) VALUES (?, ?)`;
-                await connection.execute(sql, [newClientId, sr]);
-            }
-        }
+        const newRouteId = result.insertId;
+        const selectedClientId = req.body.client_id;
+
+        // console.log("NewRoute ID: ", newRouteId);
+        // console.log("Selected Client ID: ", selectedClientId);
+
+        const sql = `INSERT INTO Client_Route (client_id, route_id) 
+                    VALUES (?,?)`;
+        await conn.execute(sql, [selectedClientId, newRouteId]);
 
         await conn.commit();
-    } catch (err) {
+    } catch (e) {
+        console.log("Caught an error: ", e.message);
         await conn.rollback();
     } finally {
         await conn.release();
     }
-
     res.redirect('/shipments');
-
+    res.send("test");
 });
 
 app.listen(3000, function () {
