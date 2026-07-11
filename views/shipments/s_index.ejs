@@ -20,31 +20,40 @@
                 </tr>
             </thead>
             <tbody>
-                <% for (let c of clients) { %>
+                <% for (let s of shipment) { %>
                     <tr>
                         <td>
-                            <%= c[`Company Name`] %>
+                            <%= s[`Company Name`] %>
                         </td>
                         <td>
-                            <%= c[`Client First Name`] %>
+                            <%= s[`Client First Name`] %>
                         </td>
                         <td>
-                            <%= c[`Client Last Name`] %>
+                            <%= s[`Client Last Name`] %>
                         </td>
                         <td>
-                            <%= c[`Contact Email`] %>
+                            <%= s[`Contact Email`] %>
                         </td>
                         <td>
-                            <%= c[`Origin Hub`] %>
+                            <%= s[`Origin Hub`] %>
                         </td>
                         <td>
-                            <%= c[`Destination Hub`] %>
+                            <%= s[`Destination Hub`] %>
                         </td>
                         <td>
-                            <%= c[`Shipping Date`] ? c[`Shipping Date`].toISOString().split('T')[0] : 'N/A' %>
+                            <%= s[`Shipping Date`] ? s[`Shipping Date`].toISOString().split('T')[0] : 'N/A' %>
                         </td>
                         <td>
-                            <%= c[`Shipment Day`] %>
+                            <%= s[`Shipment Day`] %>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a class="btn btn-primary btn-sm" href="/shipments/<%= s[`Client ID`] %>/s_update">
+                                    Update </a>
+
+                                <a class="btn btn-danger btn-sm" href="/shipments/<%= s['Client ID'] %>/s_delete">
+                                    Delete</a>
+                            </div>
                         </td>
                     </tr>
                     <% } %>

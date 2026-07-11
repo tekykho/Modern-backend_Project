@@ -123,8 +123,8 @@ app.get('/clients/:client_id/update', async function (req, res) {
         "SELECT * FROM Clients WHERE client_id = ?", [req.params.client_id]);
 
     const client = clients[0];
-    const [categories] = await connection.query("SELECT * FROM Industry_Categories");
-    const [employees] = await connection.query("SELECT * FROM Employees");
+    const [categories] = await connection.execute("SELECT * FROM Industry_Categories");
+    const [employees] = await connection.execute("SELECT * FROM Employees");
     res.render('clients/update', {
         client, categories, employees
     });
@@ -183,7 +183,7 @@ app.get('/shipments', async function (req, res) {
     });
     console.log(response[0]);
     res.render('shipments/s_index', {
-        clients: response[0]
+        shipment: response[0]
     });
 })
 
@@ -199,7 +199,7 @@ app.get('/shipments/s_create', async function (req, res) {
 });
 
 app.post('/shipments/s_create', async function (req, res) {
-     console.log(req.body);
+    console.log(req.body);
 
     const conn = await connection.getConnection();
 
@@ -216,7 +216,7 @@ app.post('/shipments/s_create', async function (req, res) {
             req.body.shipment_day
         ]);
 
-        // console("Origin hub: ",req.body.origin_hub);
+
 
         const newRouteId = result.insertId;
         const selectedClientId = req.body.client_id;
@@ -230,13 +230,69 @@ app.post('/shipments/s_create', async function (req, res) {
 
         await conn.commit();
     } catch (e) {
-        console.log("Caught an error: ", e.message);
-        await conn.rollback();
+        console.error("Caught an error: ",e);
+        if (conn) await conn.rollback();
     } finally {
-        await conn.release();
+       if (conn) await conn.release();
     }
     res.redirect('/shipments');
-    res.send("test");
+});
+
+app.get('/shipments/:client_id/s_update', async function (req, res) {
+    const [shipments] = await connection.execute(`SELECT Clients.*, 
+        Shipping_Routes.origin_hub, 
+        Shipping_Routes.destination_hub, 
+        Shipping_Routes.shipping_date, 
+        Shipping_Routes.shipment_day 
+            FROM Clients 
+            JOIN Client_Route ON Clients.client_id = Client_Route.client_id 
+            JOIN Shipping_Routes ON Client_Route.route_id = Shipping_Routes.route_id 
+            WHERE Clients.client_id = ?`, [req.params.client_id]);
+
+    const shipment = shipments[0];
+    const [categories] = await connection.query("SELECT * FROM Industry_Categories");
+    const [employees] = await connection.query("SELECT * FROM Employees");
+    res.render('shipments/s_update', {
+        shipment, categories, employees
+    });
+});
+
+app.post('/shipments/:client_id/s_update', async function (req, res) {
+    const conn = await connection.getConnection();
+
+    try {
+        await conn.beginTransaction();
+
+        const { origin_hub, destination_hub, shipping_date, shipment_day } = req.body;
+        const sql = `UPDATE Clients
+                JOIN Client_Route ON Clients.client_id = Client_Route.client_id
+                JOIN Shipping_Routes ON Client_Route.route_id = Shipping_Routes.route_id
+                SET 
+                     -- Updating the Shipping_Routes table
+                    Shipping_Routes.origin_hub = ?,
+                    Shipping_Routes.destination_hub = ?,
+                    Shipping_Routes.shipping_date = ?,
+                    Shipping_Routes.shipment_day = ?
+                WHERE Clients.client_id = ?;
+                `;
+
+        await conn.execute(sql, [
+            origin_hub,
+            destination_hub,
+            shipping_date,
+            shipment_day,
+            req.params.client_id
+        ]);
+
+        await conn.commit();
+    } catch (e) {
+        console.error("Update Transaction error: ",e);
+
+        if (conn) await conn.rollback();
+    } finally {
+        if (conn) await conn.release();
+    }
+    res.redirect('/shipments');
 });
 
 app.listen(3000, function () {
