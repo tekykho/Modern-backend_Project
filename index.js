@@ -230,30 +230,45 @@ app.post('/shipments/s_create', async function (req, res) {
 
         await conn.commit();
     } catch (e) {
-        console.error("Caught an error: ",e);
+        console.error("Caught an error: ", e);
         if (conn) await conn.rollback();
     } finally {
-       if (conn) await conn.release();
+        if (conn) await conn.release();
     }
     res.redirect('/shipments');
 });
 
 app.get('/shipments/:client_id/s_update', async function (req, res) {
-    const [shipments] = await connection.execute(`SELECT Clients.*, 
-        Shipping_Routes.origin_hub, 
-        Shipping_Routes.destination_hub, 
-        Shipping_Routes.shipping_date, 
-        Shipping_Routes.shipment_day 
-            FROM Clients 
-            JOIN Client_Route ON Clients.client_id = Client_Route.client_id 
-            JOIN Shipping_Routes ON Client_Route.route_id = Shipping_Routes.route_id 
-            WHERE Clients.client_id = ?`, [req.params.client_id]);
 
-    const shipment = shipments[0];
-    const [categories] = await connection.query("SELECT * FROM Industry_Categories");
-    const [employees] = await connection.query("SELECT * FROM Employees");
+    const [clients] = await connection.execute(
+        "SELECT * FROM Clients WHERE client_id = ?", [req.params.client_id]);
+
+    const client = clients[0];
+    const [categories] = await connection.execute("SELECT * FROM Industry_Categories");
+    const [employees] = await connection.execute("SELECT * FROM Employees");
+    const [shippingRoutes] = await connection.execute("SELECT * FROM Shipping_Routes");
+    const [selectedRouteResults] = await connection.execute(
+        `SELECT Clients.*, 
+        Shipping_Routes.route_id,
+        Shipping_Routes.origin_hub,
+        Shipping_Routes.destination_hub,
+        Shipping_Routes.shipping_date,
+        Shipping_Routes.shipment_day 
+            FROM Clients
+            JOIN Client_Route ON Clients.client_id = Client_Route.client_id
+            JOIN Shipping_Routes ON Client_Route.route_id = Shipping_Routes.route_id  
+            where Clients.client_id = ?`, [req.params.client_id]);
+    
+    const currentShipment = selectedRouteResults[0] || {};
+
+            const selectedRoute = selectedRouteResults.map(function (r) {
+        return r.route_id;
+    })
+
+    console.log(selectedRoute);
+
     res.render('shipments/s_update', {
-        shipment, categories, employees
+        client, categories, employees, shippingRoutes, currentShipment, selectedRoute
     });
 });
 
@@ -263,30 +278,39 @@ app.post('/shipments/:client_id/s_update', async function (req, res) {
     try {
         await conn.beginTransaction();
 
-        const { origin_hub, destination_hub, shipping_date, shipment_day } = req.body;
-        const sql = `UPDATE Clients
-                JOIN Client_Route ON Clients.client_id = Client_Route.client_id
-                JOIN Shipping_Routes ON Client_Route.route_id = Shipping_Routes.route_id
-                SET 
-                     -- Updating the Shipping_Routes table
-                    Shipping_Routes.origin_hub = ?,
-                    Shipping_Routes.destination_hub = ?,
-                    Shipping_Routes.shipping_date = ?,
-                    Shipping_Routes.shipment_day = ?
-                WHERE Clients.client_id = ?;
-                `;
+        const { old_route_id, origin_hub, destination_hub, shipping_date, shipment_day } = req.body;
+        console.log("This is the current shipment routes: ", req.body);
+        
+        // clean up browser datetime so that mariadb can read clearly
+        const formattedShippingDate = shipping_date ? shipping_date.replace('T', ' ') : null;
 
-        await conn.execute(sql, [
+        const currentClientId = req.params.client_id;
+        // insert the latest update on shipping routes details
+        const insertRouteSql = `INSERT INTO Shipping_Routes (origin_hub, destination_hub, shipping_date, shipment_day)
+                    VALUES (?, ?, ?, ?)`;
+
+        const [insertResult] = await conn.execute(insertRouteSql, [
             origin_hub,
             destination_hub,
             shipping_date,
             shipment_day,
-            req.params.client_id
         ]);
+        
+        // grab the newly generated route_id auto-increment value
+        const newRouteId = insertResult.insertId;
+
+        // delete the targeted client and route ID (mapping pair) in client_route
+        const deleteLinkSql = `DELETE FROM Client_Route WHERE client_id = ? AND route_id = ?`;
+        await conn.execute(deleteLinkSql, [currentClientId, old_route_id]);
+
+        // establish the new mapping pair into client_route
+        const insertLinkSql = `INSERT INTO Client_Route (client_id, route_id) 
+                    VALUES (?, ?)`;
+                    await conn.execute(insertLinkSql, [currentClientId, newRouteId]);
 
         await conn.commit();
     } catch (e) {
-        console.error("Update Transaction error: ",e);
+        console.error("Update Transaction error: ", e);
 
         if (conn) await conn.rollback();
     } finally {
@@ -294,6 +318,7 @@ app.post('/shipments/:client_id/s_update', async function (req, res) {
     }
     res.redirect('/shipments');
 });
+
 
 app.listen(3000, function () {
     console.log("Server Started");
