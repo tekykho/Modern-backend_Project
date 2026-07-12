@@ -164,6 +164,7 @@ app.get('/shipments', async function (req, res) {
             Clients.first_name AS "Client First Name",
             Clients.last_name AS "Client Last Name",
             Clients.contact_email AS "Contact Email", 
+            Shipping_Routes.route_id AS "Route ID",
             Shipping_Routes.origin_hub AS "Origin Hub", 
             Shipping_Routes.destination_hub AS "Destination Hub", 
             Shipping_Routes.shipping_date AS "Shipping Date", 
@@ -179,7 +180,7 @@ app.get('/shipments', async function (req, res) {
     `
     const response = await connection.query({
         "sql": sql,
-        "nestedTables": true
+        "nestedTables": false
     });
     console.log(response[0]);
     res.render('shipments/s_index', {
@@ -258,10 +259,10 @@ app.get('/shipments/:client_id/s_update', async function (req, res) {
             JOIN Client_Route ON Clients.client_id = Client_Route.client_id
             JOIN Shipping_Routes ON Client_Route.route_id = Shipping_Routes.route_id  
             where Clients.client_id = ?`, [req.params.client_id]);
-    
+
     const currentShipment = selectedRouteResults[0] || {};
 
-            const selectedRoute = selectedRouteResults.map(function (r) {
+    const selectedRoute = selectedRouteResults.map(function (r) {
         return r.route_id;
     })
 
@@ -280,7 +281,7 @@ app.post('/shipments/:client_id/s_update', async function (req, res) {
 
         const { old_route_id, origin_hub, destination_hub, shipping_date, shipment_day } = req.body;
         console.log("This is the current shipment routes: ", req.body);
-        
+
         // clean up browser datetime so that mariadb can read clearly
         const formattedShippingDate = shipping_date ? shipping_date.replace('T', ' ') : null;
 
@@ -295,7 +296,7 @@ app.post('/shipments/:client_id/s_update', async function (req, res) {
             shipping_date,
             shipment_day,
         ]);
-        
+
         // grab the newly generated route_id auto-increment value
         const newRouteId = insertResult.insertId;
 
@@ -306,7 +307,7 @@ app.post('/shipments/:client_id/s_update', async function (req, res) {
         // establish the new mapping pair into client_route
         const insertLinkSql = `INSERT INTO Client_Route (client_id, route_id) 
                     VALUES (?, ?)`;
-                    await conn.execute(insertLinkSql, [currentClientId, newRouteId]);
+        await conn.execute(insertLinkSql, [currentClientId, newRouteId]);
 
         await conn.commit();
     } catch (e) {
@@ -317,6 +318,61 @@ app.post('/shipments/:client_id/s_update', async function (req, res) {
         if (conn) await conn.release();
     }
     res.redirect('/shipments');
+});
+
+app.get('/shipments/:client_id/:route_id/s_delete', async function (req, res) {
+    const [results] = await connection.execute(
+        `SELECT Clients.client_id AS "Client ID",
+        Clients.first_name,
+        Clients.last_name, 
+        Clients.company_name,
+        Shipping_Routes.origin_hub, 
+        Shipping_Routes.destination_hub, 
+        Shipping_Routes.shipping_date,
+        Shipping_Routes.route_id AS "Route ID"
+            FROM Clients 
+            JOIN Client_Route ON Clients.client_id = Client_Route.client_id 
+            JOIN Shipping_Routes ON Client_Route.route_id = Shipping_Routes.route_id 
+        WHERE Clients.client_id = ? AND Shipping_Routes.route_id = ?`, [req.params.client_id, req.params.route_id]);
+
+    const client = results[0];
+    res.render('shipments/s_delete', {
+        client
+    });
+});
+
+app.post('/shipments/:client_id/:route_id/s_delete', async function (req, res) {
+    const conn = await connection.getConnection();
+
+    try {
+        await conn.beginTransaction();
+
+        const { client_id, route_id } = req.params;
+
+        await conn.execute(
+            "Delete FROM Client_Route WHERE client_id = ? AND route_id = ?",
+            [client_id, route_id]);
+
+        const [sameRoute] = await conn.execute(
+            "SELECT COUNT(*) as count FROM Client_Route WHERE route_id = ?",
+            [route_id]);
+
+        if (sameRoute[0].count === 0) {
+            await conn.execute(
+                "DELETE FROM Shipping_Routes WHERE route_id = ?",
+                [route_id])
+        };
+
+        await conn.commit();
+
+    } catch (e) {
+        console.error("Update Transaction error: ", e);
+
+        if (conn) await conn.rollback();
+    } finally {
+        if (conn) await conn.release();
+    }
+        res.redirect('/shipments');
 });
 
 

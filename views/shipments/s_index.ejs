@@ -23,41 +23,39 @@
                 <% for (let s of shipment) { %>
                     <tr>
                         <td>
-                            <%= s[`Company Name`] %>
+                            <%= s['Company Name'] %>
                         </td>
                         <td>
-                            <%= s[`Client First Name`] %>
+                            <%= s['Client First Name'] %>
                         </td>
                         <td>
-                            <%= s[`Client Last Name`] %>
+                            <%= s['Client Last Name'] %>
                         </td>
                         <td>
-                            <%= s[`Contact Email`] %>
+                            <%= s['Contact Email'] %>
                         </td>
                         <td>
-                            <%= s[`Origin Hub`] %>
+                            <%= s['Origin Hub'] %>
                         </td>
                         <td>
-                            <%= s[`Destination Hub`] %>
+                            <%= s['Destination Hub'] %>
                         </td>
                         <td>
-                            <%= s[`Shipping Date`] ? s[`Shipping Date`].toISOString().split('T')[0] : 'N/A' %>
+                            <%= s['Shipping Date'] ? s['Shipping Date'].toISOString().split('T')[0] : 'N/A' %>
                         </td>
                         <td>
-                            <%= s[`Shipment Day`] %>
+                            <%= s['Shipment Day'] %>
                         </td>
                         <td>
                             <div class="d-flex gap-2">
-                                <a class="btn btn-primary btn-sm" href="/shipments/<%= s[`Client ID`] %>/s_update">
+                                <a class="btn btn-primary btn-sm" href="/shipments/<%= s['Client ID'] %>/s_update">
                                     Update </a>
 
-                                <a class="btn btn-danger btn-sm" href="/shipments/<%= s['Client ID'] %>/s_delete">
+                                <a class="btn btn-danger btn-sm" href="/shipments/<%= s['Client ID'] %>/<%= s['Route ID'] %>/s_delete">
                                     Delete</a>
                             </div>
                         </td>
                     </tr>
                     <% } %>
             </tbody>
-
-
         </table>
