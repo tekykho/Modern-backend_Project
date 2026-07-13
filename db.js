@@ -12,4 +12,4 @@ const connection = createPool(
     }
 )
 
-module.exports = connection;
+module.exports = { connection };
