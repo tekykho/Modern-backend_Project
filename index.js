@@ -41,7 +41,10 @@ app.get("/", async function (req, res) {
 
 // display the clients shipping information page
 app.get('/clients', async function (req, res) {
-    const sql = `SELECT 
+
+    const {first_name, last_name} = req.query;
+
+    let sql = `SELECT 
             Clients.client_id AS "Client ID",
             Clients.company_name AS "Client Company Name",
             Clients.first_name AS "Client First Name",
@@ -54,15 +57,33 @@ app.get('/clients', async function (req, res) {
                 FROM Clients 
                 JOIN Industry_Categories ON Clients.category_id = Industry_Categories.category_id 
                 LEFT JOIN Employees ON Clients.employee_id = Employees.employee_id
-                ORDER BY Clients.company_name;
+                WHERE 1
     `
+
+    const bindings = [];
+
+    if (first_name) {
+        sql += " AND Clients.first_name LIKE ?";
+        bindings.push("%" + first_name + "%");
+    }
+      if (last_name) {
+        sql += " AND Clients.last_name LIKE ?";
+        bindings.push("%" + last_name + "%");
+    }
+
+    sql += " ORDER BY Clients.company_name;"
+    
+    console.log(`Executing sql: ${sql} with bindings ${JSON.stringify(bindings)}`)
+
     const response = await connection.query({
         "sql": sql,
         "nestedTables": true
-    });
+    }, bindings);
+
     console.log(response[0]);
     res.render('clients/index', {
-        clients: response[0]
+        clients: response[0],
+        searchParams: req.query
     });
 });
 
